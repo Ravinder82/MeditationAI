@@ -11,8 +11,11 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
-import { spacing, radii, typography, shadows, sessionTokens } from '../constants/DesignTokens';
-import Colors from '../constants/Colors';
+import { spacing, radii, typography, shadows, sessionTokens, animations, components, accessibility } from '../constants/DesignTokens';
+import AmbientSoundSelector from '../components/AmbientSoundSelector';
+import BreathingPatternSelector, { breathingPatterns } from '../components/BreathingPatternSelector';
+import { AudioManager } from '../lib/audioManager';
+import { ProgressTracker } from '../lib/progressTracker';
 
 type SessionMode = 'morning' | 'evening';
 type Duration = 5 | 10 | 15 | 20;
@@ -31,29 +34,74 @@ export default function SessionScreen() {
     phase: 'ready'
   });
   const [timeLeft, setTimeLeft] = useState(600);
+  const [selectedSound, setSelectedSound] = useState('silence');
+  const [selectedPattern, setSelectedPattern] = useState('basic');
+  const [audioManager] = useState(() => AudioManager.getInstance());
+  const [progressTracker] = useState(() => ProgressTracker.getInstance());
   
   // Animation values
   const breathingAnimation = useRef(new Animated.Value(1)).current;
   const progressAnimation = useRef(new Animated.Value(0)).current;
   
   const isMorning = mode === 'morning';
+
+  // Initialize audio on mount
+  useEffect(() => {
+    audioManager.initialize();
+    return () => {
+      audioManager.stopCurrentSound();
+    };
+  }, [audioManager]);
   
-  // Breathing animation effect
+  // Breathing animation effect with pattern support
   useEffect(() => {
     if (session.phase === 'active') {
+      const pattern = breathingPatterns.find(p => p.id === selectedPattern) || breathingPatterns[0];
+      
       const breathingCycle = () => {
-        Animated.sequence([
+        const sequence = [];
+        
+        // Inhale
+        sequence.push(
           Animated.timing(breathingAnimation, {
-            toValue: 1.3,
-            duration: 4000, // 4 seconds inhale
+            toValue: animations.scale.breathe,
+            duration: pattern.inhale * 1000,
             useNativeDriver: true,
-          }),
+          })
+        );
+        
+        // Hold after inhale
+        if (pattern.hold) {
+          sequence.push(
+            Animated.timing(breathingAnimation, {
+              toValue: animations.scale.breathe,
+              duration: pattern.hold * 1000,
+              useNativeDriver: true,
+            })
+          );
+        }
+        
+        // Exhale
+        sequence.push(
           Animated.timing(breathingAnimation, {
             toValue: 1,
-            duration: 4000, // 4 seconds exhale
+            duration: pattern.exhale * 1000,
             useNativeDriver: true,
-          }),
-        ]).start(() => {
+          })
+        );
+        
+        // Hold after exhale
+        if (pattern.holdAfter) {
+          sequence.push(
+            Animated.timing(breathingAnimation, {
+              toValue: 1,
+              duration: pattern.holdAfter * 1000,
+              useNativeDriver: true,
+            })
+          );
+        }
+        
+        Animated.sequence(sequence).start(() => {
           if (session.phase === 'active') {
             breathingCycle();
           }
@@ -61,7 +109,7 @@ export default function SessionScreen() {
       };
       breathingCycle();
     }
-  }, [session.phase, breathingAnimation]);
+  }, [session.phase, selectedPattern, breathingAnimation]);
   
   // Timer countdown effect
   useEffect(() => {
@@ -72,6 +120,17 @@ export default function SessionScreen() {
         setTimeLeft(prev => {
           if (prev <= 1) {
             setSession(current => ({ ...current, phase: 'completed' }));
+            audioManager.stopCurrentSound();
+            
+            // Save completed session
+            progressTracker.saveSession({
+              date: new Date().toDateString(),
+              duration: session.duration,
+              mode: isMorning ? 'morning' : 'evening',
+              breathingPattern: selectedPattern,
+              ambientSound: selectedSound
+            });
+            
             return 0;
           }
           return prev - 1;
@@ -89,7 +148,7 @@ export default function SessionScreen() {
     const progress = 1 - (timeLeft / session.duration);
     Animated.timing(progressAnimation, {
       toValue: progress,
-      duration: 300,
+      duration: animations.duration.normal,
       useNativeDriver: false,
     }).start();
   }, [timeLeft, session.duration, progressAnimation]);
@@ -116,10 +175,15 @@ export default function SessionScreen() {
   const sessionConfig = getSessionConfig();
   const durations: Duration[] = [5, 10, 15, 20];
   
-  const handleBeginMeditation = () => {
+  const handleBeginMeditation = async () => {
     const durationInSeconds = selectedDuration * 60;
     setSession({ duration: durationInSeconds, phase: 'active' });
     setTimeLeft(durationInSeconds);
+    
+    // Start ambient sound
+    if (selectedSound !== 'silence') {
+      await audioManager.playAmbientSound(selectedSound);
+    }
   };
   
   const pauseResumeMeditation = () => {
@@ -138,12 +202,13 @@ export default function SessionScreen() {
         {
           text: 'End Session',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
+            await audioManager.stopCurrentSound();
             setSession({ duration: selectedDuration * 60, phase: 'ready' });
             setTimeLeft(selectedDuration * 60);
             Animated.timing(progressAnimation, {
               toValue: 0,
-              duration: 300,
+              duration: animations.duration.normal,
               useNativeDriver: false,
             }).start();
           }
@@ -184,10 +249,10 @@ export default function SessionScreen() {
         <StatusBar barStyle="light-content" />
         
         <LinearGradient
-          colors={[sessionConfig.gradientColors[2], sessionConfig.gradientColors[1], sessionConfig.gradientColors[0]]}
+          colors={[...sessionConfig.gradientColors.colors].reverse() as any}
           style={StyleSheet.absoluteFillObject}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          start={sessionConfig.gradientColors.start}
+          end={sessionConfig.gradientColors.end}
         />
         
         <SafeAreaView style={styles.safeArea}>
@@ -230,10 +295,10 @@ export default function SessionScreen() {
       
       {/* Background Gradient */}
       <LinearGradient
-        colors={sessionConfig.gradientColors}
+        colors={sessionConfig.gradientColors.colors}
         style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        start={sessionConfig.gradientColors.start}
+        end={sessionConfig.gradientColors.end}
       />
       
       {/* Soft Blur Overlay near Header */}
@@ -296,6 +361,24 @@ export default function SessionScreen() {
                 ))}
               </View>
             </View>
+          )}
+          
+          {/* Breathing Pattern Selection (only when ready) */}
+          {session.phase === 'ready' && (
+            <BreathingPatternSelector
+              selectedPattern={selectedPattern}
+              onPatternSelect={setSelectedPattern}
+              visible={true}
+            />
+          )}
+          
+          {/* Ambient Sound Selection (only when ready) */}
+          {session.phase === 'ready' && (
+            <AmbientSoundSelector
+              selectedSound={selectedSound}
+              onSoundSelect={setSelectedSound}
+              visible={true}
+            />
           )}
           
           {/* Breathing Circle */}
@@ -400,10 +483,11 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   backButton: {
-    width: 44,
-    height: 44,
+    width: accessibility.minTouchTarget,
+    height: accessibility.minTouchTarget,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: radii.sm,
   },
   backArrow: {
     fontSize: typography.fontSize.lg,
@@ -417,7 +501,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   headerSpacer: {
-    width: 44,
+    width: accessibility.minTouchTarget,
   },
   content: {
     flex: 1,
@@ -460,16 +544,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: sessionTokens.durationChip.paddingHorizontal,
     paddingVertical: sessionTokens.durationChip.paddingVertical,
     borderRadius: radii.xl,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     minWidth: sessionTokens.durationChip.minWidth,
+    minHeight: sessionTokens.durationChip.minHeight,
     alignItems: 'center',
+    justifyContent: 'center',
     ...shadows.sm,
   },
   selectedChip: {
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    ...shadows.md,
+    transform: [{ scale: 1.05 }],
   },
   chipText: {
     fontSize: typography.fontSize.sm,
@@ -490,11 +578,11 @@ const styles = StyleSheet.create({
     height: sessionTokens.breathingCircle.size,
     borderRadius: sessionTokens.breathingCircle.size / 2,
     borderWidth: sessionTokens.breathingCircle.borderWidth,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.lg,
+    ...shadows.xl,
   },
   breathingLabel: {
     fontSize: typography.fontSize.xl,
@@ -507,11 +595,13 @@ const styles = StyleSheet.create({
   },
   beginButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radii.xxl,
+    paddingVertical: components.button.primary.paddingVertical,
+    paddingHorizontal: components.button.primary.paddingHorizontal,
+    borderRadius: components.button.primary.borderRadius,
+    minHeight: components.button.primary.minHeight,
     alignItems: 'center',
-    ...shadows.md,
+    justifyContent: 'center',
+    ...shadows.lg,
   },
   beginButtonText: {
     fontSize: typography.fontSize.md,
@@ -553,7 +643,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radii.xxl,
     minWidth: 120,
+    minHeight: accessibility.preferredTouchTarget,
     alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.sm,
   },
   pauseButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.3)',

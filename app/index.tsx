@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import Colors from '../constants/Colors';
 import { useColorScheme } from '../components/useColorScheme';
+import { spacing, typography, shadows, animations, components, accessibility, radii } from '../constants/DesignTokens';
 
 export default function Index() {
   const colorScheme = useColorScheme();
@@ -27,13 +28,13 @@ export default function Index() {
     const breathingAnimation = () => {
       Animated.sequence([
         Animated.timing(breathingScale, {
-          toValue: 1.05,
-          duration: 3000,
+          toValue: animations.scale.breathe,
+          duration: animations.duration.breathing / 2, // 2-second inhale
           useNativeDriver: true,
         }),
         Animated.timing(breathingScale, {
           toValue: 1,
-          duration: 3000,
+          duration: animations.duration.breathing / 2, // 2-second exhale
           useNativeDriver: true,
         }),
       ]).start(() => breathingAnimation());
@@ -77,9 +78,18 @@ export default function Index() {
       
       {/* Header Section */}
       <View style={styles.headerSection}>
-        <Text style={[styles.welcomeText, { color: colors.text }]}>
-          Welcome back
-        </Text>
+        <View style={styles.headerTop}>
+          <Text style={[styles.welcomeText, { color: colors.text }]}>
+            Welcome back
+          </Text>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => router.push('/settings')}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={[styles.settingsIcon, { color: colors.text }]}>⚙️</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={[styles.subheadText, { color: colors.text + '99' }]}>
           Find your moment of peace
         </Text>
@@ -173,20 +183,39 @@ const styles = StyleSheet.create({
   // Header Section
   headerSection: {
     alignItems: 'center',
-    paddingTop: 80, // iPhone safe area + spacing
-    marginBottom: 60,
+    paddingTop: spacing.xxxl + spacing.xl, // Safe area + spacing
+    marginBottom: spacing.xxxl,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  settingsButton: {
+    width: accessibility.minTouchTarget,
+    height: accessibility.minTouchTarget,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: radii.sm,
+  },
+  settingsIcon: {
+    fontSize: typography.fontSize.lg,
   },
   welcomeText: {
-    fontSize: 36,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-    marginBottom: 8,
+    fontSize: typography.fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
+    letterSpacing: typography.letterSpacing.tight,
+    marginBottom: spacing.sm,
     textAlign: 'center',
+    lineHeight: typography.fontSize.xxl * typography.lineHeight.snug,
   },
   subheadText: {
-    fontSize: 16,
-    fontWeight: '400',
-    lineHeight: 24,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.normal,
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
     textAlign: 'center',
     opacity: 0.7,
   },
@@ -196,54 +225,48 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 80,
+    marginBottom: spacing.xxxl + spacing.md,
   },
   breathingCircle: {
     width: 260,
     height: 260,
     borderRadius: 130,
-    borderWidth: 2,
+    borderWidth: 3,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.xs, // Subtle shadow for depth
   },
   circleInner: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   breatheText: {
-    fontSize: 18,
-    fontWeight: '500',
-    letterSpacing: 1,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    letterSpacing: typography.letterSpacing.wide,
   },
   
   // Practice Cards Section
   cardsSection: {
     flexDirection: 'row',
-    gap: 16,
-    paddingHorizontal: 24,
-    paddingBottom: 60, // Increased bottom padding
-    paddingTop: 20, // Added top padding
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxxl,
+    paddingTop: spacing.lg,
   },
   practiceCard: {
     flex: 1,
-    height: 140, // Increased height
-    borderRadius: 16,
+    height: 140,
+    borderRadius: components.card.borderRadius,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8, // Increased shadow
-    },
-    shadowOpacity: 0.15, // Increased opacity
-    shadowRadius: 16, // Increased radius
-    elevation: 8, // Increased elevation
+    ...shadows.lg, // Enhanced shadow for modern look
   },
   cardActive: {
-    transform: [{ scale: 0.98 }],
+    transform: [{ scale: animations.scale.press }],
   },
   cardGradient: {
     flex: 1,
-    padding: 16,
+    padding: spacing.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -251,14 +274,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardIcon: {
-    fontSize: 32, // Increased size
-    marginBottom: 8,
+    fontSize: 36, // Larger for better visual impact
+    marginBottom: spacing.sm,
   },
   cardTitle: {
-    fontSize: 18, // Increased size
-    fontWeight: '700', // Bolder
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
     color: '#FFFFFF',
     textAlign: 'center',
-    letterSpacing: 0.2,
+    letterSpacing: typography.letterSpacing.normal,
+    lineHeight: typography.fontSize.md * typography.lineHeight.snug,
   },
 });
