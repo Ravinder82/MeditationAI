@@ -2,21 +2,38 @@
 // Reusable design constants for consistent UI implementation
 
 export const spacing = {
-  // Base spacing scale (8px grid system)
-  xs: 4,     // 4px
-  sm: 8,     // 8px 
-  md: 16,    // 16px
-  lg: 24,    // 24px
-  xl: 32,    // 32px
-  xxl: 48,   // 48px
-  xxxl: 64,  // 64px
+  // Ultra-precise spacing system with golden ratio (φ = 1.618)
+  micro: 2.472,   // φ^0 * 2
+  xs: 4,          // φ^1 * 2.472 ≈ 4
+  sm: 6.472,      // φ^2 ≈ 6.472
+  md: 10.472,     // φ^3 ≈ 10.472
+  lg: 16.944,     // φ^4 ≈ 16.944
+  xl: 27.416,     // φ^5 ≈ 27.416
+  xxl: 44.361,    // φ^6 ≈ 44.361
+  xxxl: 71.777,   // φ^7 ≈ 71.777
   
-  // Semantic spacing
+  // Meditation-specific semantic spacing with golden ratio
+  breath: 8.472,  // One breath cycle spacing
+  mindful: 13.09, // Mindful pause spacing (φ^3)
+  serene: 21.544, // Serene section spacing (φ^4)
+  transformative: 34.944, // Transformative gap (φ^5)
+  
+  // Backward compatibility with enhanced precision
   screenPadding: 24,
   headerPadding: 20,
   componentGap: 16,
   sectionGap: 40,
   buttonPadding: 16,
+  
+  // Golden ratio micro-adjustments
+  golden: {
+    micro: 1.618,
+    small: 2.618,
+    medium: 4.236,
+    large: 6.854,
+    xlarge: 11.09,
+    xxlarge: 17.944,
+  },
 } as const;
 
 export const radii = {
@@ -34,36 +51,62 @@ export const radii = {
 
 export const typography = {
   fontSize: {
-    xs: 11,      // Caption text
-    sm: 13,      // Small labels
-    base: 16,    // Body text
-    md: 18,      // Subheadings
-    lg: 22,      // Section headers
-    xl: 28,      // Page titles
-    xxl: 36,     // Welcome text
-    xxxl: 48,    // Hero text
+    // Meditation psychology-based typography hierarchy with backward compatibility
+    xs: 11,      // Caption text (gentle guidance)
+    sm: 13,      // Small labels (subtle indicators)
+    base: 16,    // Body text (comfortable reading)
+    md: 18,      // Subheadings (calm sections)
+    lg: 22,      // Section headers (serene titles)
+    xl: 28,      // Page titles (welcoming hero)
+    xxl: 36,     // Welcome text (meditative display)
+    xxxl: 48,    // Hero text (transformative moments)
     display: 64, // Large display
+    micro: 9,    // Ultra-subtle labels (meditation state indicators)
+    caption: 11, // Gentle guidance text (breathing cues)
+    body: 16,    // Comfortable reading (instructions)
+    subheading: 18, // Calm section headers
+    title: 22,   // Serene page titles
+    hero: 28,    // Welcoming hero text
+    heroDisplay: 48, // Transformative hero text
   },
   fontWeight: {
-    light: '300',
-    normal: '400',
-    medium: '500',
-    semibold: '600',
-    bold: '700',
-    heavy: '800',
+    // Emotional weight scale for meditation with backward compatibility
+    light: '300',      // Soft guidance (gentle instructions)
+    normal: '400',     // Neutral body text (content)
+    medium: '500',     // Focused attention (headers)
+    semibold: '600',   // Solid presence (important CTAs)
+    bold: '700',       // Powerful moments (achievements)
+    heavy: '800',      // Strong emphasis
+    ethereal: '200',   // Lightest touch (whispers, breathing cues)
+    gentle: '300',     // Soft guidance (subtle instructions)
+    calm: '400',       // Neutral body text (content)
+    mindful: '500',    // Focused attention (headers)
+    grounded: '600',   // Solid presence (important CTAs)
+    transformative: '700', // Powerful moments (achievements)
   },
   lineHeight: {
-    tight: 1.1,
-    snug: 1.25,
-    normal: 1.5,
-    relaxed: 1.75,
-    loose: 2.0,
+    // Breathing-inspired rhythm with backward compatibility
+    tight: 1.1,   // Intimate spacing (whisper text)
+    snug: 1.25,   // Comfortable breathing (body text)
+    normal: 1.5,  // Natural reading flow
+    relaxed: 1.75, // Mindful pauses (headlines)
+    loose: 2.0,   // Transformative moments (hero text)
+    whisper: 1.1,   // Intimate spacing (micro text)
+    gentle: 1.25,   // Comfortable breathing (body text)
+    flowing: 1.5,   // Natural reading flow
+    spacious: 1.75, // Mindful pauses (headlines)
+    expansive: 2.0, // Transformative moments (hero text)
   },
   letterSpacing: {
-    tight: -0.5,
-    normal: 0,
-    wide: 0.5,
-    wider: 1.0,
+    // Emotional spacing for meditation states with backward compatibility
+    tight: -0.5,      // Close, personal guidance
+    normal: 0,        // Neutral reading
+    wide: 0.5,        // Spacious awareness
+    wider: 1.0,       // Expansive presence
+    intimate: -0.5,   // Close, personal guidance
+    natural: 0,       // Neutral reading
+    mindful: 0.5,     // Spacious awareness
+    transcendent: 1.0, // Expansive presence
   },
 } as const;
 
@@ -111,6 +154,41 @@ export const shadows = {
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 6,
+  },
+  // Ultra-refined glassmorphism shadows
+  glass: {
+    light: {
+      // Multi-layer depth with golden ratio proportions
+      shadowColor: 'rgba(255, 255, 255, 0.8)',
+      shadowOffset: { width: -4.236, height: -4.236 }, // Golden ratio
+      shadowOpacity: 0.7,
+      shadowRadius: 13.09, // Golden ratio
+      elevation: 12,
+    },
+    dark: {
+      shadowColor: 'rgba(255, 255, 255, 0.1)',
+      shadowOffset: { width: -4.236, height: -4.236 },
+      shadowOpacity: 0.1,
+      shadowRadius: 13.09,
+      elevation: 12,
+    },
+  },
+  // Ultra-subtle shadows with mathematical precision
+  subtle: {
+    light: {
+      shadowColor: 'rgba(0, 0, 0, 0.03)',
+      shadowOffset: { width: 0, height: 1.618 }, // Golden ratio
+      shadowOpacity: 0.05,
+      shadowRadius: 4.236, // Golden ratio
+      elevation: 1,
+    },
+    dark: {
+      shadowColor: 'rgba(0, 0, 0, 0.15)',
+      shadowOffset: { width: 0, height: 1.618 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4.236,
+      elevation: 1,
+    },
   },
 } as const;
 

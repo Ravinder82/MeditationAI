@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   Animated,
   StatusBar,
+  Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import Colors from '../constants/Colors';
 import { useColorScheme } from '../components/useColorScheme';
 import { spacing, typography, shadows, animations, components, accessibility, radii } from '../constants/DesignTokens';
+import Header from '../components/Header';
 
 export default function Index() {
   const colorScheme = useColorScheme();
@@ -21,34 +23,132 @@ export default function Index() {
   const [morningActive, setMorningActive] = useState(false);
   const [eveningActive, setEveningActive] = useState(false);
   
-  // Breathing animation
-  const breathingScale = useRef(new Animated.Value(1)).current;
+  // Ultra-refined breathing animation with micro-interactions
+  const [scaleValue] = useState(new Animated.Value(1));
+  const [opacityValue] = useState(new Animated.Value(1));
+  const [glowValue] = useState(new Animated.Value(0));
+  const [pulseValue] = useState(new Animated.Value(1));
   
-  useEffect(() => {
-    const breathingAnimation = () => {
-      Animated.sequence([
-        Animated.timing(breathingScale, {
-          toValue: animations.scale.breathe,
-          duration: animations.duration.breathing / 2, // 2-second inhale
-          useNativeDriver: true,
-        }),
-        Animated.timing(breathingScale, {
-          toValue: 1,
-          duration: animations.duration.breathing / 2, // 2-second exhale
-          useNativeDriver: true,
-        }),
-      ]).start(() => breathingAnimation());
-    };
+  const startBreathingAnimation = (duration: number) => {
+    const inhaleDuration = duration * 0.4;
+    const exhaleDuration = duration * 0.6;
+    const microPause = 200; // Subtle pause for realism
     
-    breathingAnimation();
-  }, [breathingScale]);
-  
-  const handleMorningPress = () => {
-    router.push('/session?mode=morning' as any);
+    Animated.loop(
+      Animated.sequence([
+        // Micro-interaction: Subtle anticipation before inhale
+        Animated.timing(pulseValue, {
+          toValue: 1.05,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        // Inhale: Smooth expansion with organic easing
+        Animated.parallel([
+          Animated.timing(scaleValue, {
+            toValue: 1.25,
+            duration: inhaleDuration,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1), // Natural breathing curve
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityValue, {
+            toValue: 0.85,
+            duration: inhaleDuration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowValue, {
+            toValue: 1,
+            duration: inhaleDuration,
+            useNativeDriver: true,
+          }),
+        ]),
+        // Micro-pause at peak inhale
+        Animated.delay(microPause),
+        // Exhale: Gentle contraction with deceleration
+        Animated.parallel([
+          Animated.timing(scaleValue, {
+            toValue: 1,
+            duration: exhaleDuration,
+            easing: Easing.bezier(0.42, 0, 0.58, 1), // Natural deceleration
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityValue, {
+            toValue: 1,
+            duration: exhaleDuration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowValue, {
+            toValue: 0,
+            duration: exhaleDuration,
+            useNativeDriver: true,
+          }),
+        ]),
+        // Micro-interaction: Subtle settling at exhale completion
+        Animated.timing(pulseValue, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   };
   
+  useEffect(() => {
+    startBreathingAnimation(4000);
+  }, []);
+  
+  // Haptic-like visual feedback for touch interactions
+  const [morningScale] = useState(new Animated.Value(1));
+  const [eveningScale] = useState(new Animated.Value(1));
+  const [morningGlow] = useState(new Animated.Value(0));
+  const [eveningGlow] = useState(new Animated.Value(0));
+
+  const createTouchFeedback = (scaleAnim: Animated.Value, glowAnim: Animated.Value) => {
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 0.96,
+          duration: 80,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1.02,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 300,
+          friction: 20,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  };
+
+  const handleMorningPress = () => {
+    createTouchFeedback(morningScale, morningGlow);
+    setTimeout(() => {
+      router.push('/session?mode=morning' as any);
+    }, 200);
+  };
+
   const handleEveningPress = () => {
-    router.push('/session?mode=evening' as any);
+    createTouchFeedback(eveningScale, eveningGlow);
+    setTimeout(() => {
+      router.push('/session?mode=evening' as any);
+    }, 200);
   };
   
   // Theme-based colors
@@ -76,24 +176,7 @@ export default function Index() {
         backgroundColor={colors.background}
       />
       
-      {/* Header Section */}
-      <View style={styles.headerSection}>
-        <View style={styles.headerTop}>
-          <Text style={[styles.welcomeText, { color: colors.text }]}>
-            Welcome back
-          </Text>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => router.push('/settings')}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Text style={[styles.settingsIcon, { color: colors.text }]}>⚙️</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={[styles.subheadText, { color: colors.text + '99' }]}>
-          Find your moment of peace
-        </Text>
-      </View>
+      <Header />
       
       {/* Breathing Circle Section */}
       <View style={styles.circleSection}>
@@ -101,10 +184,19 @@ export default function Index() {
           style={[
             styles.breathingCircle,
             {
+              transform: [{ scale: scaleValue }, { scale: pulseValue }],
+              opacity: opacityValue,
               borderColor: themeColors.circleStroke,
-              backgroundColor: themeColors.circleFill,
-              transform: [{ scale: breathingScale }],
-            }
+              backgroundColor: themeColors.circleStroke + '15',
+              shadowColor: themeColors.circleStroke,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: glowValue,
+              shadowRadius: 20,
+              elevation: glowValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 10],
+              }),
+            },
           ]}
         >
           <View style={styles.circleInner}>
